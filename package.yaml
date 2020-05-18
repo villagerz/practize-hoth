@@ -1,0 +1,53 @@
+name:                hauth
+version:             0.1.0.0
+github:              "villagerz/hauth"
+license:             BSD3
+author:              "Villager Z"
+maintainer:          "git.villagerz@pm.me"
+copyright:           "2020 Villager Z"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Unclassified
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/villagerz/hauth#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- classy-prelude
+
+default-extensions:
+- NoImplicitPrelude
+- OverloadedStrings
+
+library:
+  source-dirs: src
+
+executables:
+  hauth-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hauth
+
+tests:
+  hauth-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hauth
