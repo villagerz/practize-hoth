@@ -25,12 +25,15 @@ dependencies:
 - time
 - time-lens
 - pcre-heavy
-
+- aeson
+  
   
 default-extensions:
 - NoImplicitPrelude
 - OverloadedStrings
 - QuasiQuotes
+- TemplateHaskell
+    
   
 library:
   source-dirs: src
