@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: aab170a24ad5859f84a852e61d715cb54eec68c5dffc0033342a13e9c8a63e8e
+-- hash: 71f5fdd604a513fc05d3196c43475bc65b691b4dc5d3213c8a268346cf7ad92e
 
 name:           hauth
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Domain.Auth
       Lib
   other-modules:
       Paths_hauth
@@ -38,6 +39,7 @@ library
     , base >=4.7 && <5
     , classy-prelude
     , pcre-heavy
+    , template-haskell
     , time
     , time-lens
   default-language: Haskell2010
@@ -56,6 +58,7 @@ executable hauth-exe
     , classy-prelude
     , hauth
     , pcre-heavy
+    , template-haskell
     , time
     , time-lens
   default-language: Haskell2010
@@ -75,6 +78,7 @@ test-suite hauth-test
     , classy-prelude
     , hauth
     , pcre-heavy
+    , template-haskell
     , time
     , time-lens
   default-language: Haskell2010
