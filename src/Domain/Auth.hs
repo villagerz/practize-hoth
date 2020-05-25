@@ -7,16 +7,59 @@ where
 import ClassyPrelude
 import Domain.Validation
 import Text.Regex.PCRE.Heavy
+import Control.Monad.Except
 
 data Auth = Auth
   { authEmail :: Email
   , authPassword :: Password
   } deriving (Show, Eq)
+data UserId = Int
+data SessionId = Text
 
 data RegistrationError = RegistrationErrorEmailTaken deriving (Show, Eq)
+data EmailVerfificationError = EmailVerfificationErrorInvalidCode deriving (Show, Eq)
+data LoginError = LoginInvalidAuth | LoginEmailNotVerified deriving (Show, Eq)
 
 newtype Email = Email { emailRaw :: Text } deriving (Show, Eq)
 newtype Password = Password { passwordRaw :: Text } deriving (Show, Eq)
+
+type VerificationCode = Text
+
+class Monad m => AuthRepo m where
+  addAuth :: Auth -> m (Either RegistrationError VerificationCode)
+  setEmailAsVerified :: VerificationCode -> m (Either EmailVerfificationError ())
+  findUserByAuth :: Auth -> m (Maybe (UserId, Bool))
+  findEmailFromUser :: UserId -> m (Maybe Email)
+
+class Monad m => SessionRepo m where
+  newSession :: UserId -> m SessionId
+  findUserBySession :: SessionId -> m (Maybe UserId)
+
+class Monad m => EmailVerificationNotif m where
+  notifyEmailVerification :: Email -> VerificationCode -> m ()
+
+login :: (AuthRepo m, SessionRepo m) => Auth -> m (Either LoginError SessionId)
+login auth = runExceptT $ do
+  result <- lift $ findUserByAuth auth
+  case result of
+    Nothing -> throwError LoginInvalidAuth
+    Just (_, False) -> throwError LoginEmailNotVerified
+    Just (uid, _) -> lift $ newSession uid
+
+resolveSessionId :: SessionRepo m => SessionId -> m (Maybe UserId)
+resolveSessionId = findUserBySession
+
+register :: (AuthRepo m, EmailVerificationNotif m) => Auth -> m (Either RegistrationError ())
+register auth = runExceptT $ do
+  vCode <- ExceptT $ addAuth auth
+  let email = authEmail auth
+  lift $ notifyEmailVerification email vCode
+
+verifyEmail :: AuthRepo m => VerificationCode -> m (Either EmailVerfificationError ())
+verifyEmail = setEmailAsVerified
+
+getUser :: AuthRepo m => UserId -> m (Maybe Email)
+getUser = findEmailFromUser
 
 mkEmail :: Text -> Either [Text] Email
 mkEmail = validate Email [ regexMatches emailAddrRegex "Not a valid email" ]
@@ -35,3 +78,4 @@ mkPassword = validate Password [ lengthBetween 5 50 "Should be between 5 and 50 
 
 rawPassword :: Password -> Text
 rawPassword = passwordRaw
+
