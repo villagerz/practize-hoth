@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e3790a15e12657ed97a8e09cea285b569caf3b46d28c483ede01647bacfad8ba
+-- hash: e3a98f58d325f1315f3d77fafd7b7ee01057740e94e16b22aa55d470495b6c21
 
 name:           hauth
 version:        0.1.0.0
@@ -35,11 +35,12 @@ library
       Paths_hauth
   hs-source-dirs:
       src
-  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell
+  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts
   build-depends:
       aeson
     , base >=4.7 && <5
     , classy-prelude
+    , data-has
     , mtl
     , pcre-heavy
     , template-haskell
@@ -53,12 +54,13 @@ executable hauth-exe
       Paths_hauth
   hs-source-dirs:
       app
-  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell
+  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
     , classy-prelude
+    , data-has
     , hauth
     , mtl
     , pcre-heavy
@@ -74,12 +76,13 @@ test-suite hauth-test
       Paths_hauth
   hs-source-dirs:
       test
-  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell
+  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
     , classy-prelude
+    , data-has
     , hauth
     , mtl
     , pcre-heavy

@@ -28,12 +28,16 @@ dependencies:
 - aeson
 - template-haskell  
 - mtl
+- data-has
   
 default-extensions:
 - NoImplicitPrelude
 - OverloadedStrings
 - QuasiQuotes
 - TemplateHaskell
+- ConstraintKinds
+- FlexibleContexts
+    
     
   
 library:
