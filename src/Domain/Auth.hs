@@ -1,6 +1,29 @@
 module Domain.Auth
-  ( mkEmail
+  (
+    -- * Types
+    Auth(..)
+  , Email
+  , rawEmail
+  , Password
+  , rawPassword
+  , UserId
+  , VerificationCode
+  , SessionId
+  , RegistrationError(..)
+  , EmailVerfificationError(..)
+  , LoginError(..)
+  ,  mkEmail
   , mkPassword
+  -- * Ports
+  , AuthRepo(..)
+  , EmailVerificationNotif (..)
+  , SessionRepo(..)
+  -- * Use cases
+  , register
+  , verifyEmail
+  , login
+  , resolveSessionId
+  , getUser
   )
 where
 
