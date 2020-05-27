@@ -35,7 +35,11 @@ setEmailAsVerified :: InMemory r m =>  D.VerificationCode -> m (Either D.EmailVe
 setEmailAsVerified = error "TODO"
 
 findUserByAuth :: InMemory r m =>  D.Auth -> m (Maybe (D.UserId, Bool))
-findUserByAuth auth = error "TODO"
+findUserByAuth auth = do
+  tvar <- asks getter
+  state <- liftIO $ readTVarIO tvar
+  let uid = map fst . find ((auth ==).snd) $ stateAuths state
+  return $ uid >>= (\u -> Just (u, elem (D.authEmail auth) (stateVerifiedEmails state) ))
 
 
 findEmailFromUser :: InMemory r m =>  D.UserId -> m (Maybe D.Email)
