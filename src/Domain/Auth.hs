@@ -36,8 +36,8 @@ data Auth = Auth
   { authEmail :: Email
   , authPassword :: Password
   } deriving (Show, Eq)
-data UserId = Int deriving (Show, Eq, Ord)
-data SessionId = Text deriving (Show, Eq, Ord)
+type UserId = Int 
+type SessionId = Text
 
 data RegistrationError = RegistrationErrorEmailTaken deriving (Show, Eq)
 data EmailVerfificationError = EmailVerfificationErrorInvalidCode deriving (Show, Eq)
