@@ -4,6 +4,7 @@ import ClassyPrelude
 import qualified Domain.Auth as D
 import Data.Has
 import Text.StringRandom
+import Control.Monad.Except
 
 type InMemory r m = (Has (TVar State) r, MonadReader r m, MonadIO m)
 data State = State
@@ -32,7 +33,20 @@ addAuth :: InMemory r m =>  D.Auth -> m (Either D.RegistrationError D.Verificati
 addAuth = error "TODO"
 
 setEmailAsVerified :: InMemory r m =>  D.VerificationCode -> m (Either D.EmailVerfificationError ())
-setEmailAsVerified = error "TODO"
+setEmailAsVerified vcode = do
+  tvar <- asks getter
+  atomically . runExceptT $ do
+    s <- lift $ readTVar tvar
+    let unverifieds = stateUnverifiedEmails s
+        verifieds = stateVerifiedEmails s
+        memail = lookup vcode unverifieds
+    case memail of
+      Nothing -> throwError D.EmailVerfificationErrorInvalidCode
+      Just email -> do
+        let newUnvs = deleteMap vcode unverifieds
+            newVs = insertSet email verifieds
+            newstate = s {stateUnverifiedEmails = newUnvs, stateVerifiedEmails = newVs}
+        lift $ writeTVar tvar newstate
 
 findUserByAuth :: InMemory r m =>  D.Auth -> m (Maybe (D.UserId, Bool))
 findUserByAuth auth = do
