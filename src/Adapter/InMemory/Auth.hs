@@ -28,9 +28,29 @@ initialState = State
 frmt = "[A-Za-z0-9]{16}"
 
 
-
+-- | add Auth, need to check if the email already is in use.
+-- if it isn't then generate a vcode, add it to stateUnverifiedEmails
+-- generate a user id, map the userId to the auth through stateAuths
+-- If the email is in use then throw a RegistrationError
 addAuth :: InMemory r m =>  D.Auth -> m (Either D.RegistrationError D.VerificationCode)
-addAuth = error "TODO"
+addAuth auth = do
+  tvar <- asks getter
+  vcode <- liftIO $ stringRandomIO frmt
+  atomically . runExceptT $ do
+    s <- lift $ readTVar tvar
+    let duplicated = isEmailExists s auth
+    when duplicated $ throwError D.RegistrationErrorEmailTaken
+    let newid = stateUserIdCounter s + 1
+        newauths = (newid, auth) : (stateAuths s)
+        unverifieds = insertMap vcode (D.authEmail auth) (stateUnverifiedEmails s)
+        news = s {stateAuths = newauths, stateUserIdCounter = newid, stateUnverifiedEmails = unverifieds}
+    lift $ writeTVar tvar news
+    return vcode
+
+isEmailExists :: State -> D.Auth -> Bool
+isEmailExists s a = let as = stateAuths s
+                        email = D.authEmail a
+                    in any (email ==) . map (D.authEmail . snd) $ as
 
 setEmailAsVerified :: InMemory r m =>  D.VerificationCode -> m (Either D.EmailVerfificationError ())
 setEmailAsVerified vcode = do
