@@ -52,7 +52,7 @@ isEmailExists s a = let as = stateAuths s
                         email = D.authEmail a
                     in any (email ==) . map (D.authEmail . snd) $ as
 
-setEmailAsVerified :: InMemory r m =>  D.VerificationCode -> m (Either D.EmailVerfificationError ())
+setEmailAsVerified :: InMemory r m =>  D.VerificationCode -> m (Either D.EmailVerfificationError (D.UserId, D.Email))
 setEmailAsVerified vcode = do
   tvar <- asks getter
   atomically . runExceptT $ do
@@ -60,13 +60,17 @@ setEmailAsVerified vcode = do
     let unverifieds = stateUnverifiedEmails s
         verifieds = stateVerifiedEmails s
         memail = lookup vcode unverifieds
-    case memail of
-      Nothing -> throwError D.EmailVerfificationErrorInvalidCode
-      Just email -> do
+        auths = stateAuths s
+        muserid = memail >>= (\e -> map fst . find((e ==) . D.authEmail . snd) $ auths)
+    case (memail, muserid) of
+      (Nothing, _) -> throwError D.EmailVerfificationErrorInvalidCode
+      (_, Nothing) -> throwError D.EmailVerfificationErrorInvalidCode
+      (Just email, Just uid) -> do
         let newUnvs = deleteMap vcode unverifieds
             newVs = insertSet email verifieds
             newstate = s {stateUnverifiedEmails = newUnvs, stateVerifiedEmails = newVs}
         lift $ writeTVar tvar newstate
+        return (uid, email)
 
 findUserByAuth :: InMemory r m =>  D.Auth -> m (Maybe (D.UserId, Bool))
 findUserByAuth auth = do

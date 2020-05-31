@@ -50,7 +50,7 @@ type VerificationCode = Text
 
 class Monad m => AuthRepo m where
   addAuth :: Auth -> m (Either RegistrationError (UserId,VerificationCode))
-  setEmailAsVerified :: VerificationCode -> m (Either EmailVerfificationError ())
+  setEmailAsVerified :: VerificationCode -> m (Either EmailVerfificationError (UserId, Email))
   findUserByAuth :: Auth -> m (Maybe (UserId, Bool))
   findEmailFromUser :: UserId -> m (Maybe Email)
 
@@ -78,7 +78,7 @@ register auth = runExceptT $ do
   let email = authEmail auth
   lift $ notifyEmailVerification email vCode
 
-verifyEmail :: AuthRepo m => VerificationCode -> m (Either EmailVerfificationError ())
+verifyEmail :: AuthRepo m => VerificationCode -> m (Either EmailVerfificationError (UserId, Email))
 verifyEmail = setEmailAsVerified
 
 getUser :: AuthRepo m => UserId -> m (Maybe Email)
