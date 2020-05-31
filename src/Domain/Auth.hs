@@ -31,6 +31,8 @@ import ClassyPrelude
 import Domain.Validation
 import Text.Regex.PCRE.Heavy
 import Control.Monad.Except
+import Katip
+
 
 data Auth = Auth
   { authEmail :: Email
@@ -61,25 +63,32 @@ class Monad m => SessionRepo m where
 class Monad m => EmailVerificationNotif m where
   notifyEmailVerification :: Email -> VerificationCode -> m ()
 
-login :: (AuthRepo m, SessionRepo m) => Auth -> m (Either LoginError SessionId)
+login :: (KatipContext m, AuthRepo m, SessionRepo m) => Auth -> m (Either LoginError SessionId)
 login auth = runExceptT $ do
   result <- lift $ findUserByAuth auth
   case result of
     Nothing -> throwError LoginInvalidAuth
     Just (_, False) -> throwError LoginEmailNotVerified
-    Just (uid, _) -> lift $ newSession uid
+    Just (uid, _) -> withUserContext uid . lift $ do
+      sid <- newSession uid
+      $(logTM) InfoS $ ls (rawEmail $ authEmail auth) <> " logged in successfully."
+      return sid
 
 resolveSessionId :: SessionRepo m => SessionId -> m (Maybe UserId)
 resolveSessionId = findUserBySession
 
-register :: (AuthRepo m, EmailVerificationNotif m) => Auth -> m (Either RegistrationError ())
+register :: (KatipContext m, AuthRepo m, EmailVerificationNotif m) => Auth -> m (Either RegistrationError ())
 register auth = runExceptT $ do
   (uId, vCode) <- ExceptT $ addAuth auth
   let email = authEmail auth
   lift $ notifyEmailVerification email vCode
+  withUserContext uId $ $(logTM) InfoS $ ls (rawEmail email) <> " is registered successfully."
 
-verifyEmail :: AuthRepo m => VerificationCode -> m (Either EmailVerfificationError (UserId, Email))
-verifyEmail = setEmailAsVerified
+verifyEmail :: (KatipContext m, AuthRepo m) => VerificationCode -> m (Either EmailVerfificationError ())
+verifyEmail vc = runExceptT $ do
+  (uid, email) <- ExceptT $ setEmailAsVerified vc
+  withUserContext uid $ $(logTM) InfoS $ ls (rawEmail email)  <> " is verified successfully."
+  return ()
 
 getUser :: AuthRepo m => UserId -> m (Maybe Email)
 getUser = findEmailFromUser
@@ -101,4 +110,7 @@ mkPassword = validate Password [ lengthBetween 5 50 "Should be between 5 and 50 
 
 rawPassword :: Password -> Text
 rawPassword = passwordRaw
+
+withUserContext :: (KatipContext m) => UserId -> m a -> m a
+withUserContext uid = katipAddContext (sl "userid" uid)
 
