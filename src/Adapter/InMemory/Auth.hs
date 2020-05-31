@@ -32,7 +32,7 @@ frmt = "[A-Za-z0-9]{16}"
 -- if it isn't then generate a vcode, add it to stateUnverifiedEmails
 -- generate a user id, map the userId to the auth through stateAuths
 -- If the email is in use then throw a RegistrationError
-addAuth :: InMemory r m =>  D.Auth -> m (Either D.RegistrationError D.VerificationCode)
+addAuth :: InMemory r m =>  D.Auth -> m (Either D.RegistrationError (D.UserId, D.VerificationCode))
 addAuth auth = do
   tvar <- asks getter
   vcode <- liftIO $ stringRandomIO frmt
@@ -45,7 +45,7 @@ addAuth auth = do
         unverifieds = insertMap vcode (D.authEmail auth) (stateUnverifiedEmails s)
         news = s {stateAuths = newauths, stateUserIdCounter = newid, stateUnverifiedEmails = unverifieds}
     lift $ writeTVar tvar news
-    return vcode
+    return (newid, vcode)
 
 isEmailExists :: State -> D.Auth -> Bool
 isEmailExists s a = let as = stateAuths s

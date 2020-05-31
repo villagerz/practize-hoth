@@ -49,7 +49,7 @@ newtype Password = Password { passwordRaw :: Text } deriving (Show, Eq)
 type VerificationCode = Text
 
 class Monad m => AuthRepo m where
-  addAuth :: Auth -> m (Either RegistrationError VerificationCode)
+  addAuth :: Auth -> m (Either RegistrationError (UserId,VerificationCode))
   setEmailAsVerified :: VerificationCode -> m (Either EmailVerfificationError ())
   findUserByAuth :: Auth -> m (Maybe (UserId, Bool))
   findEmailFromUser :: UserId -> m (Maybe Email)
@@ -74,7 +74,7 @@ resolveSessionId = findUserBySession
 
 register :: (AuthRepo m, EmailVerificationNotif m) => Auth -> m (Either RegistrationError ())
 register auth = runExceptT $ do
-  vCode <- ExceptT $ addAuth auth
+  (uId, vCode) <- ExceptT $ addAuth auth
   let email = authEmail auth
   lift $ notifyEmailVerification email vCode
 
