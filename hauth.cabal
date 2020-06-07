@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e02e7b5f10846599abc388b232da839e754b34e41f8be1535d3d74b473c174e2
+-- hash: dbd14b975f9c4798e23d886d82850d606aced71b1c6b2eddc55c0d00feccab99
 
 name:           hauth
 version:        0.1.0.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Adapter.InMemory.Auth
+      Adapter.PostgreSQL.Auth
       Domain.Auth
       Domain.Validation
       Lib
@@ -35,15 +36,20 @@ library
       Paths_hauth
   hs-source-dirs:
       src
-  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts GeneralizedNewtypeDeriving
+  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts GeneralizedNewtypeDeriving UnicodeSyntax
   build-depends:
       aeson
     , base >=4.7 && <5
+    , base-unicode-symbols
     , classy-prelude
     , data-has
+    , exceptions
     , katip
     , mtl
     , pcre-heavy
+    , postgresql-simple
+    , postgresql-simple-migration
+    , resource-pool
     , string-random
     , template-haskell
     , time
@@ -56,17 +62,22 @@ executable hauth-exe
       Paths_hauth
   hs-source-dirs:
       app
-  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts GeneralizedNewtypeDeriving
+  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts GeneralizedNewtypeDeriving UnicodeSyntax
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
+    , base-unicode-symbols
     , classy-prelude
     , data-has
+    , exceptions
     , hauth
     , katip
     , mtl
     , pcre-heavy
+    , postgresql-simple
+    , postgresql-simple-migration
+    , resource-pool
     , string-random
     , template-haskell
     , time
@@ -80,17 +91,22 @@ test-suite hauth-test
       Paths_hauth
   hs-source-dirs:
       test
-  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts GeneralizedNewtypeDeriving
+  default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts GeneralizedNewtypeDeriving UnicodeSyntax
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
+    , base-unicode-symbols
     , classy-prelude
     , data-has
+    , exceptions
     , hauth
     , katip
     , mtl
     , pcre-heavy
+    , postgresql-simple
+    , postgresql-simple-migration
+    , resource-pool
     , string-random
     , template-haskell
     , time

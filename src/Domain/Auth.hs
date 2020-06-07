@@ -14,6 +14,8 @@ module Domain.Auth
   , LoginError(..)
   ,  mkEmail
   , mkPassword
+  , invalidEmail
+  , invalidPswd
   -- * Ports
   , AuthRepo(..)
   , EmailVerificationNotif (..)
@@ -24,26 +26,33 @@ module Domain.Auth
   , login
   , resolveSessionId
   , getUser
+  , genvcode
   )
 where
 
-import ClassyPrelude
-import Domain.Validation
-import Text.Regex.PCRE.Heavy
-import Control.Monad.Except
-import Katip
-
+import           ClassyPrelude
+import           Control.Monad.Except
+import           Domain.Validation
+import           Katip
+import           Text.Regex.PCRE.Heavy
+import           Text.StringRandom
 
 data Auth = Auth
-  { authEmail :: Email
-  , authPassword :: Password
-  } deriving (Show, Eq)
-type UserId = Int 
+    { authEmail    :: Email
+    , authPassword :: Password
+    }
+    deriving (Show, Eq)
+type UserId = Int
 type SessionId = Text
 
-data RegistrationError = RegistrationErrorEmailTaken deriving (Show, Eq)
-data EmailVerfificationError = EmailVerfificationErrorInvalidCode deriving (Show, Eq)
-data LoginError = LoginInvalidAuth | LoginEmailNotVerified deriving (Show, Eq)
+data RegistrationError = RegistrationErrorEmailTaken
+    | UnexpectedRegistration String
+    deriving (Show, Eq)
+data EmailVerfificationError = EmailVerfificationErrorInvalidCode
+    deriving (Show, Eq)
+data LoginError = LoginInvalidAuth
+    | LoginEmailNotVerified
+    deriving (Show, Eq)
 
 newtype Email = Email { emailRaw :: Text } deriving (Show, Eq, Ord)
 newtype Password = Password { passwordRaw :: Text } deriving (Show, Eq)
@@ -97,6 +106,10 @@ mkEmail :: Text -> Either [Text] Email
 mkEmail = validate Email [ regexMatches emailAddrRegex "Not a valid email" ]
   where emailAddrRegex = [re|^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}$|]
 
+invalidEmail ∷ [Text] → Email
+invalidEmail _ = Email "0.0"
+
+
 rawEmail :: Email -> Text
 rawEmail = emailRaw
 
@@ -106,7 +119,8 @@ mkPassword = validate Password [ lengthBetween 5 50 "Should be between 5 and 50 
                                , regexMatches [re|[A-Z]|] "Should have a uppercase letter"
                                , regexMatches [re|[a-z]|] "Should have a lowercase letter"
                                ]
-                                                
+invalidPswd ∷ [Text] → Password
+invalidPswd _ = Password "0"
 
 rawPassword :: Password -> Text
 rawPassword = passwordRaw
@@ -114,3 +128,7 @@ rawPassword = passwordRaw
 withUserContext :: (KatipContext m) => UserId -> m a -> m a
 withUserContext uid = katipAddContext (sl "userid" uid)
 
+genvcode ∷ Text → IO Text
+genvcode prefix = do
+  r ← stringRandomIO "[A-Za-z0-9]{16}"
+  return $ (tshow prefix) <> "_" <> r

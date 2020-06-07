@@ -3,14 +3,14 @@ module Lib
       User (..)
     ) where
 
-import ClassyPrelude
-import Language.Haskell.TH.Syntax (nameBase)
-import Data.Aeson
-import Data.Aeson.TH
-import qualified Adapter.InMemory.Auth as M
-import Domain.Auth
-import Katip
-import qualified Control.Monad.Fail as Fail
+import qualified Adapter.InMemory.Auth      as M
+import           ClassyPrelude
+import qualified Control.Monad.Fail         as Fail
+import           Data.Aeson
+import           Data.Aeson.TH
+import           Domain.Auth
+import           Katip
+import           Language.Haskell.TH.Syntax (nameBase)
 
 type State = TVar M.State
 newtype App a = App {
@@ -43,13 +43,15 @@ withKatip app = bracket createLogEnv closeScribes app
           stdoutScribe <- mkHandleScribe ColorIfTerminal stdout (permitItem InfoS)  V2
           registerScribe "stdout" stdoutScribe defaultScribeSettings le
 
-data User = User { userId :: Int
-                 , userName :: Text
-                 , userHobbies :: [Text]
-                 } deriving (Show)
+data User = User
+    { userId      :: Int
+    , userName    :: Text
+    , userHobbies :: [Text]
+    }
+    deriving (Show)
 $(let strcutName = nameBase ''User
       lowercaseFirst (x : xs) = toLower [x] <> xs
-      lowercaseFirst xs = xs
+      lowercaseFirst xs       = xs
       options = defaultOptions { fieldLabelModifier = lowercaseFirst . drop (length strcutName) }
    in deriveJSON options ''User)
 
@@ -60,8 +62,8 @@ someFunc = withKatip $ \le -> do
 
 action :: App ()
 action = do
-      let e = either undefined id $ mkEmail "test@test.com"
-          pswd = either undefined id $ mkPassword "12HJbvv"
+      let e = either invalidEmail id $ mkEmail "test@test.com"
+          pswd = either invalidPswd id $ mkPassword "12HJbvv"
           auth = Auth e pswd
       register auth
       Just v <- M.getNotificationsForEmail e -- I needed to implement an instance of Monaf.Fail for this to work
@@ -70,4 +72,4 @@ action = do
       Just uid <- resolveSessionId session
       Just registeredEmail <- getUser uid
       return ()
-      
+

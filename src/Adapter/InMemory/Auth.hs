@@ -1,20 +1,21 @@
 module Adapter.InMemory.Auth where
 
-import ClassyPrelude
-import qualified Domain.Auth as D
-import Data.Has
-import Text.StringRandom
-import Control.Monad.Except
+import           ClassyPrelude
+import           Control.Monad.Except
+import           Data.Has
+import qualified Domain.Auth          as D
+import           Text.StringRandom
 
 type InMemory r m = (Has (TVar State) r, MonadReader r m, MonadIO m)
 data State = State
-  { stateAuths :: [(D.UserId, D.Auth)]
-  , stateUnverifiedEmails :: Map D.VerificationCode D.Email
-  , stateVerifiedEmails :: Set D.Email
-  , stateUserIdCounter :: Int
-  , stateNotifications :: Map D.Email D.VerificationCode
-  , stateSessions :: Map D.SessionId D.UserId
-  } deriving (Show, Eq)
+    { stateAuths            :: [(D.UserId, D.Auth)]
+    , stateUnverifiedEmails :: Map D.VerificationCode D.Email
+    , stateVerifiedEmails   :: Set D.Email
+    , stateUserIdCounter    :: Int
+    , stateNotifications    :: Map D.Email D.VerificationCode
+    , stateSessions         :: Map D.SessionId D.UserId
+    }
+    deriving (Show, Eq)
 
 initialState = State
   { stateAuths = []
@@ -27,14 +28,13 @@ initialState = State
 
 frmt = "[A-Za-z0-9]{16}"
 
-
 -- | add Auth, need to check if the email already is in use.
 -- if it isn't then generate a vcode, add it to stateUnverifiedEmails
 -- generate a user id, map the userId to the auth through stateAuths
 -- If the email is in use then throw a RegistrationError
 addAuth :: InMemory r m =>  D.Auth -> m (Either D.RegistrationError (D.UserId, D.VerificationCode))
 addAuth auth = do
-  tvar <- asks getter
+  tvar ← asks getter
   vcode <- liftIO $ stringRandomIO frmt
   atomically . runExceptT $ do
     s <- lift $ readTVar tvar
@@ -43,14 +43,16 @@ addAuth auth = do
     let newid = stateUserIdCounter s + 1
         newauths = (newid, auth) : (stateAuths s)
         unverifieds = insertMap vcode (D.authEmail auth) (stateUnverifiedEmails s)
-        news = s {stateAuths = newauths, stateUserIdCounter = newid, stateUnverifiedEmails = unverifieds}
-    lift $ writeTVar tvar news
+        η = s {stateAuths = newauths, stateUserIdCounter = newid, stateUnverifiedEmails = unverifieds}
+    lift $ writeTVar tvar η
     return (newid, vcode)
 
 isEmailExists :: State -> D.Auth -> Bool
-isEmailExists s a = let as = stateAuths s
-                        email = D.authEmail a
+isEmailExists s a =  let as = stateAuths s
+                         email = D.authEmail a
                     in any (email ==) . map (D.authEmail . snd) $ as
+
+
 
 setEmailAsVerified :: InMemory r m =>  D.VerificationCode -> m (Either D.EmailVerfificationError (D.UserId, D.Email))
 setEmailAsVerified vcode = do
@@ -115,10 +117,10 @@ findUserBySession sId = do
   liftIO $ lookup sId . stateSessions <$> readTVarIO tvar
 
 sessionid :: D.UserId -> IO D.SessionId
-sessionid u = ((tshow u) <>) <$> stringRandomIO frmt
+sessionid u = ((tshow u) <>) <$>  stringRandomIO frmt
 
-stateWithMap :: (Ord k) => (State -> Map k v) -> k -> v -> (Map k v -> State) -> State -> State
-stateWithMap stm k v mts  = mts . insertMap k v . stm  
+stateWithMap :: (Ord k) =>  (State -> Map k v) -> k -> v -> (Map k v -> State) -> State -> State
+stateWithMap stm k v mts  = mts . insertMap k v . stm
 
 insertSession :: State -> D.SessionId -> D.UserId -> State
 insertSession s sid uid = let oldsessions = stateSessions s

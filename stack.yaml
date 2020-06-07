@@ -41,6 +41,7 @@ packages:
 #
 extra-deps:
 - string-random-0.1.2.0
+- postgresql-simple-migration-0.1.15.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

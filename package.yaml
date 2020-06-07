@@ -31,6 +31,12 @@ dependencies:
 - data-has
 - string-random
 - katip
+- resource-pool
+- postgresql-simple # need pg_config and libpq-dev on system to allow build to work
+- postgresql-simple-migration
+- exceptions
+- base-unicode-symbols
+
   
 default-extensions:
 - NoImplicitPrelude
@@ -40,6 +46,7 @@ default-extensions:
 - ConstraintKinds
 - FlexibleContexts
 - GeneralizedNewtypeDeriving
+- UnicodeSyntax
 
   
 library:
