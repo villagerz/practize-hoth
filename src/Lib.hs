@@ -4,7 +4,9 @@ module Lib
     ) where
 
 import qualified Adapter.InMemory.Auth      as M
+import qualified Adapter.PostgreSQL.Auth    as PG
 import           ClassyPrelude
+import           Control.Monad.Catch        (MonadThrow)
 import qualified Control.Monad.Fail         as Fail
 import           Data.Aeson
 import           Data.Aeson.TH
@@ -12,16 +14,17 @@ import           Domain.Auth
 import           Katip
 import           Language.Haskell.TH.Syntax (nameBase)
 
-type State = TVar M.State
+type State = (PG.State, TVar M.State)
+
 newtype App a = App {
   unApp :: ReaderT State (KatipContextT IO) a
-  } deriving (Applicative, Functor, Monad, MonadReader State, MonadIO, KatipContext, Katip)
+  } deriving (Applicative, Functor, Monad, MonadReader State, MonadIO, KatipContext, Katip, MonadThrow)
 
 instance AuthRepo App where
-  addAuth = M.addAuth
-  setEmailAsVerified = M.setEmailAsVerified
-  findUserByAuth = M.findUserByAuth
-  findEmailFromUser = M.findEmailFromUser
+  addAuth = PG.addAuth
+  setEmailAsVerified = PG.setEmailAsVerified
+  findUserByAuth = PG.findUserByAuth
+  findEmailFromUser = PG.findEmailFromUser
 
 instance Fail.MonadFail App where
   fail _ = error "this should not have happened"
@@ -57,8 +60,15 @@ $(let strcutName = nameBase ''User
 
 someFunc :: IO ()
 someFunc = withKatip $ \le -> do
-  state <- newTVarIO M.initialState
-  run le state action
+  mstate <- newTVarIO M.initialState
+  PG.withState pgCfg $ \pgState → run le (pgState, mstate) action
+  where
+    pgCfg = PG.Config
+            { PG.configUrl = "postgresql://localhost/hauth"
+            , PG.configStripeCount = 2
+            , PG.configMaxOpenConnPerStripe = 5
+            , PG.configIdleConnTimeout = 10
+            }
 
 action :: App ()
 action = do
@@ -66,7 +76,7 @@ action = do
           pswd = either invalidPswd id $ mkPassword "12HJbvv"
           auth = Auth e pswd
       register auth
-      Just v <- M.getNotificationsForEmail e -- I needed to implement an instance of Monaf.Fail for this to work
+      v <- PG.getNotificationsForEmail e
       verifyEmail  v
       Right session <- login auth
       Just uid <- resolveSessionId session

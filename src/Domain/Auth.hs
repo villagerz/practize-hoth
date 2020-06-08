@@ -93,6 +93,7 @@ register auth = runExceptT $ do
   lift $ notifyEmailVerification email vCode
   withUserContext uId $ $(logTM) InfoS $ ls (rawEmail email) <> " is registered successfully."
 
+
 verifyEmail :: (KatipContext m, AuthRepo m) => VerificationCode -> m (Either EmailVerfificationError ())
 verifyEmail vc = runExceptT $ do
   (uid, email) <- ExceptT $ setEmailAsVerified vc

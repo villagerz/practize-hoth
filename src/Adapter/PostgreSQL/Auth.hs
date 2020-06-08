@@ -33,8 +33,49 @@ addAuth (D.Auth e p) = do
   return $ eitherPGResult result vcode
   where
     qry = "insert into auths (email, pass, email_verification_code, is_email_verified) \
-          \ (?, crypt(?, gen_salt('bf')), ?, 'f') returning id"
+          \ values (?, crypt(?, gen_salt('bf')), ?, 'f') returning id"
 
+eitherPGResult ∷ Either SqlError [Only D.UserId] → D.VerificationCode → Either D.RegistrationError (D.UserId, D.VerificationCode)
+eitherPGResult result vc =
+  case result of
+    Right [Only uId] → Right (uId, vc)
+    Right _ → throwError $ D.UnexpectedRegistration "Should not happend: PG didn't return user id"
+    Left err@SqlError{sqlState = state, sqlErrorMsg = msg} →
+      if state ≡ "23505" ∧ "auths_email_key" `isInfixOf` msg
+      then Left D.RegistrationErrorEmailTaken
+      else throwError $ D.UnexpectedRegistration $ "Unhandled PG exception:" <> show err
+
+getNotificationsForEmail ∷ PG r m ⇒ D.Email → m D.VerificationCode
+getNotificationsForEmail em = do
+  result ← withConn $ \c → query c qry (Only ∘ D.rawEmail $ em)
+  case result of
+    [Only vc] → return vc
+    _         → return "impossible" -- this function is used for testing only through Lib.someFunc, so loosey goosey
+  where
+    qry = "select email_verification_code from auths where email = ?"
+
+findUserByAuth ∷ PG r m ⇒ D.Auth → m (Maybe (D.UserId, Bool))
+findUserByAuth (D.Auth e p) = do
+  let rawe = D.rawEmail e
+      rawp = D.rawPassword p
+  result ← withConn $ \c → query c qry (rawe, rawp)
+  return $ case result of
+    [(uid, isverified)] → Just (uid, isverified)
+    _                   → Nothing
+  where
+    qry = "select id, is_email_verified \
+          \from auths where email = ? and pass = crypt(?, pass)"
+
+findEmailFromUser ∷ PG r m ⇒ D.UserId → m (Maybe D.Email)
+findEmailFromUser uid = do
+  result ← withConn $ \c → query c qry (Only uid)
+  case result of
+    [Only mail] → case D.mkEmail mail of
+      Right email → return $ Just email
+      _           → throwString $ "Should not happen: email in DB is not valid: " <> unpack mail
+    _ → return Nothing
+  where
+    qry = "select cast(email as text) from auths where id = ?"
 
 setEmailAsVerified ∷ PG r m ⇒ D.VerificationCode → m (Either D.EmailVerfificationError (D.UserId, D.Email))
 setEmailAsVerified vc = do
@@ -50,15 +91,6 @@ setEmailAsVerified vc = do
           \where email_verification_code = ? \
           \returning id, cast (email as text)"
 
-eitherPGResult ∷ Either SqlError [Only D.UserId] → D.VerificationCode → Either D.RegistrationError (D.UserId, D.VerificationCode)
-eitherPGResult result vc =
-  case result of
-    Right [Only uId] → Right (uId, vc)
-    Right _ → throwError $ D.UnexpectedRegistration "Should not happend: PG didn't return user id"
-    Left err@SqlError{sqlState = state, sqlErrorMsg = msg} →
-      if state ≡ "23505" ∧ "auths_email_key" `isInfixOf` msg
-      then Left D.RegistrationErrorEmailTaken
-      else throwError $ D.UnexpectedRegistration $ "Unhandled PG exception:" <> show err
 
 withConn ∷ PG r m ⇒ (Connection → IO a) → m a
 withConn action = do
