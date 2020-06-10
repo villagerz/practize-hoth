@@ -36,6 +36,7 @@ dependencies:
 - postgresql-simple-migration
 - exceptions
 - base-unicode-symbols
+- hedis
 
   
 default-extensions:

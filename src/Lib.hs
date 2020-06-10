@@ -5,6 +5,7 @@ module Lib
 
 import qualified Adapter.InMemory.Auth      as M
 import qualified Adapter.PostgreSQL.Auth    as PG
+import qualified Adapter.Redis.Auth         as Redis
 import           ClassyPrelude
 import           Control.Monad.Catch        (MonadThrow)
 import qualified Control.Monad.Fail         as Fail
@@ -14,7 +15,7 @@ import           Domain.Auth
 import           Katip
 import           Language.Haskell.TH.Syntax (nameBase)
 
-type State = (PG.State, TVar M.State)
+type State = (PG.State, Redis.State, TVar M.State)
 
 newtype App a = App {
   unApp :: ReaderT State (KatipContextT IO) a
@@ -30,8 +31,8 @@ instance Fail.MonadFail App where
   fail _ = error "this should not have happened"
 
 instance SessionRepo App where
-  newSession = M.newSession
-  findUserBySession = M.findUserBySession
+  newSession = Redis.newSession
+  findUserBySession = Redis.findUserBySession
 
 instance EmailVerificationNotif App where
   notifyEmailVerification = M.notifyEmailVerification
@@ -61,8 +62,11 @@ $(let strcutName = nameBase ''User
 someFunc :: IO ()
 someFunc = withKatip $ \le -> do
   mstate <- newTVarIO M.initialState
-  PG.withState pgCfg $ \pgState → run le (pgState, mstate) action
+  PG.withState pgCfg $ \pgState →
+                         Redis.withState redisCfg $ \redisState →
+                                 run le (pgState, redisState, mstate) action
   where
+    redisCfg = "redis://localhost:6379/0"
     pgCfg = PG.Config
             { PG.configUrl = "postgresql://localhost/hauth"
             , PG.configStripeCount = 2
