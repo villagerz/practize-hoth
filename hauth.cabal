@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 566c5b4c01a5ee6fc40bc726faee6556c20fa4628f07881835ad2b7e74c5525d
+-- hash: d78bf1e501dbd92b08ff7f3f08526da2ebf0947ed28578a87f8fc91f6b37f6b1
 
 name:           hauth
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       Adapter.InMemory.Auth
       Adapter.PostgreSQL.Auth
+      Adapter.RabbitMQ.Common
       Adapter.Redis.Auth
       Domain.Auth
       Domain.Validation
@@ -40,6 +41,7 @@ library
   default-extensions: NoImplicitPrelude OverloadedStrings QuasiQuotes TemplateHaskell ConstraintKinds FlexibleContexts GeneralizedNewtypeDeriving UnicodeSyntax
   build-depends:
       aeson
+    , amqp
     , base >=4.7 && <5
     , base-unicode-symbols
     , classy-prelude
@@ -68,6 +70,7 @@ executable hauth-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , amqp
     , base >=4.7 && <5
     , base-unicode-symbols
     , classy-prelude
@@ -98,6 +101,7 @@ test-suite hauth-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , amqp
     , base >=4.7 && <5
     , base-unicode-symbols
     , classy-prelude

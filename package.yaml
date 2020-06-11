@@ -37,6 +37,7 @@ dependencies:
 - exceptions
 - base-unicode-symbols
 - hedis
+- amqp
 
   
 default-extensions:
