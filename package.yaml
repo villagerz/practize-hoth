@@ -38,6 +38,7 @@ dependencies:
 - base-unicode-symbols
 - hedis
 - amqp
+- unliftio
 
   
 default-extensions:
