@@ -38,7 +38,8 @@ dependencies:
 - base-unicode-symbols
 - hedis
 - amqp
-- safe-exceptions
+- safe-exceptions #ch 06
+- scotty #ch 07
 
   
 default-extensions:
