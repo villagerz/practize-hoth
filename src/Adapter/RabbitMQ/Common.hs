@@ -1,14 +1,14 @@
 module Adapter.RabbitMQ.Common where
 
 import           ClassyPrelude
-import           Control.Concurrent  (forkIO)
-import           Control.Monad.Catch (MonadCatch)
+import           Control.Concurrent     (forkIO)
+import qualified Control.Exception.Safe as Safe (tryAny)
+import           Control.Monad.Catch    (MonadCatch)
 import           Data.Aeson
 import           Data.Has
 import           Katip
 import           Network.AMQP
-import           Prelude.Unicode     ((∘), (∧), (≡))
-import           UnliftIO.Exception  (tryAny)
+import           Prelude.Unicode        ((∘), (∧), (≡))
 
 data State = State
     { spublisherChan :: Channel
@@ -67,14 +67,14 @@ publish exchange routingkey payload = do
 
 
 -- eithDecode' parses and decodes immediately (eitherDecode just parses, decodes later)
-consume ∷ (KatipContext m, FromJSON a, MonadUnliftIO m, MonadCatch m) ⇒ Message → (a → m Bool) → m Bool
+consume ∷ (KatipContext m, FromJSON a,  MonadCatch m) ⇒ Message → (a → m Bool) → m Bool
 consume msg handle =
   case eitherDecode' (msgBody msg) of
     Left err → withMsgAndErr msg err $ do
       $(logTM) ErrorS "Malformed payload. Rejecting"
       return False
     Right payload → do
-      result ← tryAny (handle payload)
+      result ← Safe.tryAny (handle payload)
       case result of
         Left err → withMsgAndErr msg (displayException err) $ do
           $(logTM) ErrorS "There was an exception when processing the msg. Rejecting"

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ecd0d64638269850efe3677e08c7eb37010ad10e4fb8717665aa021587b7d330
+-- hash: a50340dc289c3a11b2e4d3c04b3cc4a6a714ab0eba6969bfd9c35b3a14d41656
 
 name:           hauth
 version:        0.1.0.0
@@ -55,11 +55,11 @@ library
     , postgresql-simple
     , postgresql-simple-migration
     , resource-pool
+    , safe-exceptions
     , string-random
     , template-haskell
     , time
     , time-lens
-    , unliftio
   default-language: Haskell2010
 
 executable hauth-exe
@@ -86,11 +86,11 @@ executable hauth-exe
     , postgresql-simple
     , postgresql-simple-migration
     , resource-pool
+    , safe-exceptions
     , string-random
     , template-haskell
     , time
     , time-lens
-    , unliftio
   default-language: Haskell2010
 
 test-suite hauth-test
@@ -118,9 +118,9 @@ test-suite hauth-test
     , postgresql-simple
     , postgresql-simple-migration
     , resource-pool
+    , safe-exceptions
     , string-random
     , template-haskell
     , time
     , time-lens
-    , unliftio
   default-language: Haskell2010

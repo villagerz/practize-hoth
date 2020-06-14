@@ -38,7 +38,7 @@ dependencies:
 - base-unicode-symbols
 - hedis
 - amqp
-- unliftio
+- safe-exceptions
 
   
 default-extensions:

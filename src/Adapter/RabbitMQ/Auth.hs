@@ -3,6 +3,7 @@ module Adapter.RabbitMQ.Auth where
 import qualified Adapter.InMemory.Auth   as M
 import           Adapter.RabbitMQ.Common
 import           ClassyPrelude
+import qualified Control.Exception.Safe  as Safe (tryAny)
 import           Control.Monad.Catch     (MonadCatch)
 import           Data.Aeson
 import           Data.Aeson.TH
@@ -11,7 +12,6 @@ import qualified Domain.Auth             as D
 import           Katip
 import           Network.AMQP
 import           Prelude.Unicode         ((∘), (∧), (≡))
-
 
 data EmailVerificationPayload = EmailVerificationPayload
     { email :: Text
@@ -26,7 +26,7 @@ notifyEmailVerification e v =
   let payload = EmailVerificationPayload (D.rawEmail e) v
   in publish "auth" "userRegistered" payload
 
-consumeEmailVerification ∷ (M.InMemory r m, KatipContext m, MonadUnliftIO m, MonadCatch m)
+consumeEmailVerification ∷ (M.InMemory r m, KatipContext m,  MonadCatch m)
   ⇒ (m Bool → IO Bool) → Message → IO Bool
 consumeEmailVerification runner msg =
   runner $ consume msg handler
@@ -38,10 +38,11 @@ consumeEmailVerification runner msg =
           return False
         Right e → do
           let vc = vcode payload
+          $(logTM) InfoS $ "consumed email verification in RabbitMQ plugin"
           M.notifyEmailVerification e vc
           return True
 
-init ∷ (M.InMemory r m, KatipContext m, MonadUnliftIO m, MonadCatch m)
+init ∷ (M.InMemory r m, KatipContext m, MonadCatch m)
  ⇒ State → (m Bool → IO Bool) → IO ()
 init state runner = do
   initQueue state "verifyEmail" "auth" "userRegistered"
