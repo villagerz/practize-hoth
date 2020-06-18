@@ -40,6 +40,13 @@ dependencies:
 - amqp
 - safe-exceptions #ch 06
 - scotty #ch 07
+- http-types
+- cookie
+- wai
+- wai-extra
+- blaze-builder
+- digestive-functors
+- digestive-functors-aeson
 
   
 default-extensions:

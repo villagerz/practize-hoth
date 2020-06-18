@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cf211f4924b05623601865c50fb316a5b557ad496f5079f2a7f24bcc2c39c7e8
+-- hash: 80cbe407e08c340be1ceedfe3067c099ce3d24f4fa80dd6a72859e3a1c02a354
 
 name:           hauth
 version:        0.1.0.0
@@ -46,10 +46,15 @@ library
     , amqp
     , base >=4.7 && <5
     , base-unicode-symbols
+    , blaze-builder
     , classy-prelude
+    , cookie
     , data-has
+    , digestive-functors
+    , digestive-functors-aeson
     , exceptions
     , hedis
+    , http-types
     , katip
     , mtl
     , pcre-heavy
@@ -62,6 +67,8 @@ library
     , template-haskell
     , time
     , time-lens
+    , wai
+    , wai-extra
   default-language: Haskell2010
 
 executable hauth-exe
@@ -77,11 +84,16 @@ executable hauth-exe
     , amqp
     , base >=4.7 && <5
     , base-unicode-symbols
+    , blaze-builder
     , classy-prelude
+    , cookie
     , data-has
+    , digestive-functors
+    , digestive-functors-aeson
     , exceptions
     , hauth
     , hedis
+    , http-types
     , katip
     , mtl
     , pcre-heavy
@@ -94,6 +106,8 @@ executable hauth-exe
     , template-haskell
     , time
     , time-lens
+    , wai
+    , wai-extra
   default-language: Haskell2010
 
 test-suite hauth-test
@@ -110,11 +124,16 @@ test-suite hauth-test
     , amqp
     , base >=4.7 && <5
     , base-unicode-symbols
+    , blaze-builder
     , classy-prelude
+    , cookie
     , data-has
+    , digestive-functors
+    , digestive-functors-aeson
     , exceptions
     , hauth
     , hedis
+    , http-types
     , katip
     , mtl
     , pcre-heavy
@@ -127,4 +146,6 @@ test-suite hauth-test
     , template-haskell
     , time
     , time-lens
+    , wai
+    , wai-extra
   default-language: Haskell2010

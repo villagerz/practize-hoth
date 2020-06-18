@@ -17,7 +17,8 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-15.13
+#resolver: lts-15.13
+resolver: lts-16.1
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -42,6 +43,14 @@ packages:
 extra-deps:
 - string-random-0.1.2.0
 - postgresql-simple-migration-0.1.15.0
+- Cabal-3.2.0.0
+- digestive-functors-0.8.4.2
+- digestive-functors-aeson-1.1.27 # fail: needed to use allow-newer . stack solver didn't work either
+# digestive-functors-aeson needed a version lens which is not in LTS 15.3 or 16.1
+# that then needed Cabal version thhat was not supported
+# then it was just downhill. in the end gave up and added allow-newer to global stack yaml. sigh. sigh again.
+# this broke down mid way through chapter 7 trying to get scotty to work.
+
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
