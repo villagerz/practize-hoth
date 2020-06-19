@@ -22,8 +22,16 @@ routes = do
   post "/api/auth/register" postToRegister
   post "/api/auth/verifyemail" postToVerifyEmail
   post "/api/auth/login" postToLogin
-  get "/api/users" (⊥)
+  get "/api/users" getUserDetails
 
+_userDetailErrStr = "Should not happen to a user with a cookie : SessionId mapped to invalid user:"
+getUserDetails ∷ ScottyHauth e m ⇒ ActionT e m ()
+getUserDetails = do
+  uid ← reqCurrentUserId
+  memail ← lift $ getUser uid
+  case memail of
+    Nothing    → raise $ stringError _userDetailErrStr
+    Just email → json $ rawEmail email
 
 postToRegister ∷ ScottyHauth e m  ⇒ ActionT e m ()
 postToRegister = do
