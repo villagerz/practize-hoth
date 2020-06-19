@@ -3,6 +3,7 @@ module Lib
       User (..)
     ) where
 
+import qualified Adapter.Http.Main          as Http
 import qualified Adapter.InMemory.Auth      as M
 import qualified Adapter.PostgreSQL.Auth    as PG
 import qualified Adapter.RabbitMQ.Auth      as MQAuth
@@ -17,14 +18,16 @@ import           Domain.Auth
 import           Katip
 import           Language.Haskell.TH.Syntax (nameBase)
 import           Text.StringRandom
-
+import           Web.Scotty.Trans
 
 type State = (PG.State, Redis.State, MQ.State, TVar M.State)
+
 
 newtype App a = App {
   unApp :: ReaderT State (KatipContextT IO) a
   } deriving (Applicative, Functor, Monad, MonadReader State,
-              MonadIO, KatipContext, Katip, MonadThrow,  MonadCatch)
+              MonadIO, KatipContext, Katip, MonadThrow,  MonadCatch )
+
 
 instance AuthRepo App where
   addAuth = PG.addAuth
@@ -65,21 +68,22 @@ $(let strcutName = nameBase ''User
    in deriveJSON options ''User)
 
 main :: IO ()
-main = withState $ \le state@(_,_,mqState,_) -> do
+main = withState $ \port le state@(_,_,mqState,_) -> do
   let runner = run le state
   MQAuth.init mqState runner
-  runner action
+  Http.main port runner
 
 
-withState ∷ (LogEnv → State → IO ()) → IO ()
+withState ∷ (Int → LogEnv → State → IO ()) → IO ()
 withState action =  withKatip $ \le → do
   mstate ← newTVarIO M.initialState
   PG.withState pgCfg $ \pgState →
     Redis.withState redisCfg $ \redisState →
      MQ.withState mqCfg 16 $ \mqState → do
         let state = (pgState, redisState, mqState, mstate)
-        action le state
+        action port le state
     where
+    port = 3300
     redisCfg = "redis://localhost:6379/0"
     pgCfg = PG.Config
             { PG.configUrl = "postgresql://localhost/hauth"
@@ -90,24 +94,4 @@ withState action =  withKatip $ \le → do
     mqCfg = "amqp://localhost:5672/%2F"
 
 
-action :: App ()
-action = do
-  randemail ← liftIO $ stringRandomIO "[a-z0-9]{5}@test\\.com"
-  let e = either invalidEmail id $ mkEmail randemail
-      pswd = either invalidPswd id $ mkPassword "12HJbvv"
-      auth = Auth e pswd
-  register auth
-  v <- pollNotif e
-  verifyEmail  v
-  Right session <- login auth
-  Just uid <- resolveSessionId session
-  Just registeredEmail <- getUser uid
-  print (session, uid, registeredEmail)
-  return ()
-  where
-    pollNotif em = do
-      result ← M.getNotificationsForEmail em
-      case result of
-        Nothing → pollNotif em
-        Just vc → return vc
 

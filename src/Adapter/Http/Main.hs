@@ -1,26 +1,37 @@
 module Adapter.Http.Main where
 
-import           ClassyPrelude    hiding (delete)
+import qualified Adapter.Http.Api.Auth       as AuthApi
+import           Adapter.Http.Common
+import           ClassyPrelude               hiding (delete)
+import           Data.Aeson                  hiding (json, (.:))
+import           Domain.Auth
+import           Katip
+import           Network.HTTP.Types.Status
+import           Network.Wai
+import           Network.Wai.Middleware.Gzip
+import           Prelude.Unicode             ((∘), (∧), (≡), (⊥))
+import           Text.Digestive.Form         ((.:))
+import qualified Text.Digestive.Form         as DF
 import           Web.Scotty.Trans
 
-main ∷ IO ()
-main = scottyT 3000 id routes
+type HauthApp m = (MonadIO m, KatipContext m, AuthRepo m, EmailVerificationNotif m, SessionRepo m)
 
--- routes are processed in order till first hit
--- hence notFound at end
-routes ∷ (MonadIO m) ⇒ ScottyT LText m ()
+main ∷ HauthApp m ⇒ Int → (m Response → IO Response) → IO ()
+main port runner = scottyT port runner routes
+
+
+routes ∷ HauthApp m ⇒ ScottyT LText m ()
 routes = do
-  httpdo get "/" "home"
-  httpdo get "/hello" "Hello!"
-  get "/hello/:name" $ do
-    name ← param "name"
-    (text $ "Hello, " <> name) `rescue` \_ → text "you of no name"
-  httpdo post "/users" "adding user"
-  httpdo put "/users/:id" "updating user"
-  httpdo patch "/users/:id" "partially updating users"
-  httpdo delete "/users/:id" "deleting user"
-  httpdo matchAny "/admin" "I don't care about your Http verb"
-  httpdo options (regex ".*") "CORS usually use this"
-  notFound $ text "404"
+  middleware $ gzip $ def {gzipFiles = GzipCompress}
+  AuthApi.routes
+  defaultHandler $ \e → do
+    lift $ $(logTM) ErrorS $ mkmsg e
+    status status500
+    json _ise
+  where
+    mkmsg err = "Unhandled error: " <> ls (showError err)
 
-httpdo verb route text' = verb route $ text text'
+_ise ∷ Text
+_ise = "InternalServerError"
+
+
