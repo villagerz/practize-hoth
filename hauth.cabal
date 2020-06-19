@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7b7c315c816ccde714aa392861102bd58346cefa7e026967baaee69373fd303b
+-- hash: 0228b79d97999616fba558c216d950ba9694ab4153325223e48bc256629af76a
 
 name:           hauth
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
       Adapter.RabbitMQ.Auth
       Adapter.RabbitMQ.Common
       Adapter.Redis.Auth
+      Config
       Domain.Auth
       Domain.Validation
       Lib

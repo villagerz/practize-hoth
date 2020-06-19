@@ -10,6 +10,7 @@ import qualified Adapter.RabbitMQ.Auth      as MQAuth
 import qualified Adapter.RabbitMQ.Common    as MQ
 import qualified Adapter.Redis.Auth         as Redis
 import           ClassyPrelude
+import qualified Config
 import           Control.Monad.Catch        (MonadCatch, MonadThrow)
 import qualified Control.Monad.Fail         as Fail
 import           Data.Aeson
@@ -68,30 +69,24 @@ $(let strcutName = nameBase ''User
    in deriveJSON options ''User)
 
 main :: IO ()
-main = withState $ \port le state@(_,_,mqState,_) -> do
+main = do
+  config ← Config.fromenv
+  mainWithConfig config
+
+mainWithConfig ∷ Config.Config → IO ()
+mainWithConfig cfg = withState cfg $ \port le state@(_,_,mqState,_) -> do
   let runner = run le state
   MQAuth.init mqState runner
   Http.main port runner
 
-
-withState ∷ (Int → LogEnv → State → IO ()) → IO ()
-withState action =  withKatip $ \le → do
+withState ∷ Config.Config → (Int → LogEnv → State → IO ()) → IO ()
+withState cfg action =  withKatip $ \le → do
   mstate ← newTVarIO M.initialState
-  PG.withState pgCfg $ \pgState →
-    Redis.withState redisCfg $ \redisState →
-     MQ.withState mqCfg 16 $ \mqState → do
+  PG.withState (Config.pg cfg) $ \pgState →
+    Redis.withState (Config.redis cfg) $ \redisState →
+     MQ.withState (Config.mq cfg) $ \mqState → do
         let state = (pgState, redisState, mqState, mstate)
-        action port le state
-    where
-    port = 3300
-    redisCfg = "redis://localhost:6379/0"
-    pgCfg = PG.Config
-            { PG.configUrl = "postgresql://localhost/hauth"
-            , PG.configStripeCount = 2
-            , PG.configMaxOpenConnPerStripe = 5
-            , PG.configIdleConnTimeout = 10
-            }
-    mqCfg = "amqp://localhost:5672/%2F"
+        action (Config.port cfg) le state
 
 
 

@@ -15,18 +15,23 @@ data State = State
     , sconsumerChan  :: Channel
     }
 
-withState ∷ String → Integer → (State → IO a) → IO a
-withState url prefetch action = bracket initState destroyState action'
+data Config = Config
+    { url         :: String
+    , prefetchInt :: Integer
+    }
+
+withState ∷ Config → (State → IO a) → IO a
+withState cfg action = bracket initState destroyState action'
   where
     initState = do
       publisher ← openConnAndChan
       consumer ← openConnAndChan
       return (publisher, consumer)
     openConnAndChan = do
-      conn ← openConnection'' ∘ fromURI $ url
+      conn ← openConnection'' ∘ fromURI $ (url cfg)
       chan ← openChannel conn
       confirmSelect chan False
-      qos chan 0 (fromInteger prefetch) True
+      qos chan 0 (fromInteger (prefetchInt cfg)) True
       return (conn, chan)
     destroyState ((conn1, _), (conn2, _)) = do
       closeConnection conn1
