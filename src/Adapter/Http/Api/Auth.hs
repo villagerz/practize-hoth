@@ -3,16 +3,12 @@ module Adapter.Http.Api.Auth where
 import           Adapter.Http.Common
 import           ClassyPrelude
 import           Data.Aeson                hiding (json, (.:))
-import           Data.Time.Lens
 import           Domain.Auth
 import           Katip
 import           Network.HTTP.Types.Status
 import           Prelude.Unicode           ((∘), (∧), (≡), (⊥))
-import qualified Text.Digestive.Aeson      as DF
 import           Text.Digestive.Form       ((.:))
 import qualified Text.Digestive.Form       as DF
-import qualified Text.Digestive.Types      as DF
-import           Web.Cookie
 import           Web.Scotty.Trans
 
 type ScottyHauth e m = (ScottyError e, MonadIO m, KatipContext m, AuthRepo m, EmailVerificationNotif m, SessionRepo m)
