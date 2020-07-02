@@ -7,6 +7,7 @@ import           Data.Time.Lens
 import           Domain.Auth
 import           Network.HTTP.Types.Status
 import           Prelude.Unicode           ((∘), (∧), (≡))
+
 import qualified Text.Digestive.Aeson      as DF
 import qualified Text.Digestive.Form       as DF
 import qualified Text.Digestive.Types      as DF
